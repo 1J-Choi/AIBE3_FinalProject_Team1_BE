@@ -5,6 +5,8 @@ import com.back.domain.post.post.service.PostService;
 import com.back.global.rsData.RsData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,8 +20,12 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping
-    public RsData<Void> createPost(@Valid @RequestBody PostCreateReqBody reqBody) {
+    public ResponseEntity<RsData<Void>> createPost(@Valid @RequestBody PostCreateReqBody reqBody) {
 
-        return RsData.success("Post created successfully.");
+        postService.create(reqBody);
+
+        RsData<Void> body = RsData.success("게시글이 등록되었습니다.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
+
     }
 }
