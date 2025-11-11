@@ -12,6 +12,7 @@ import com.back.domain.post.post.dto.res.PostListResBody;
 import com.back.domain.post.post.dto.res.PostOptionResBody;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.security.SecurityUser;
+import com.back.standard.util.page.PageUt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import org.mockito.BDDMockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
@@ -98,28 +100,33 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("게시글 목록 조회")
-    void getPostList_success() throws Exception {
+    @DisplayName("게시글 목록 조회 - 페이징 처리")
+    void getPostList_paging_success() throws Exception {
         // given
-        List<PostListResBody> mockList = List.of(
-                PostListResBody.builder()
-                        .postId(1L)
-                        .title("맥북 대여합니다.")
-                        .thumbnailImageUrl("https://example.com/thumb1.jpg")
-                        .fee(3000)
-                        .deposit(10000)
-                        .authorNickname("jjuchan")
-                        .build()
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<PostListResBody> mockPage = new PageImpl<>(
+                List.of(
+                        PostListResBody.builder()
+                                .postId(1L)
+                                .title("맥북 대여합니다.")
+                                .thumbnailImageUrl("https://example.com/thumb.jpg")
+                                .authorNickname("jjuchan")
+                                .fee(3000)
+                                .deposit(10000)
+                                .build()
+                ),
+                pageable,
+                1
         );
-
-        BDDMockito.given(postService.getPostList())
-                .willReturn(mockList);
-
         // when & then
+        BDDMockito.given(postService.getPostList(any()))
+                .willReturn(PageUt.of(mockPage));
+
         mockMvc.perform(get("/api/v1/posts")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].title").value("맥북 대여합니다."));
+                .andExpect(jsonPath("$.content[0].title").value("맥북 대여합니다."));
     }
 
     @Test

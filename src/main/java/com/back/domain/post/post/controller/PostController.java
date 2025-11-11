@@ -6,8 +6,10 @@ import com.back.domain.post.post.dto.res.PostDetailResBody;
 import com.back.domain.post.post.dto.res.PostListResBody;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.security.SecurityUser;
+import com.back.standard.util.page.PagePayload;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,8 +40,8 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostListResBody>> getPostList() {
-        List<PostListResBody> body = postService.getPostList();
+    public ResponseEntity<PagePayload<PostListResBody>> getPostList(Pageable pageable) {
+        PagePayload<PostListResBody> body = postService.getPostList(pageable);
         return ResponseEntity.ok(body);
     }
 

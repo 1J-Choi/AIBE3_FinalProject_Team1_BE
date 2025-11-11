@@ -13,7 +13,11 @@ import com.back.domain.post.post.entity.PostImage;
 import com.back.domain.post.post.entity.PostOption;
 import com.back.domain.post.post.repository.PostRepository;
 import com.back.global.exception.ServiceException;
+import com.back.standard.util.page.PagePayload;
+import com.back.standard.util.page.PageUt;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -72,11 +76,11 @@ public class PostService {
         return savedPost.getId();
     }
 
-    public List<PostListResBody> getPostList() {
-        List<Post> posts = postRepository.findAll();
+    public PagePayload<PostListResBody> getPostList(Pageable pageable) {
+        Page<Post> postPage = postRepository.findAll(pageable);
 
-        return posts.stream()
-                .map(post -> PostListResBody.builder()
+        Page<PostListResBody> mappedPage = postPage.map(post ->
+                PostListResBody.builder()
                         .postId(post.getId())
                         .title(post.getTitle())
                         .thumbnailImageUrl(
@@ -97,8 +101,8 @@ public class PostService {
                         .isFavorite(false) // TODO: 추후 즐겨찾기 로직 추가
                         .isBanned(post.getIsBanned())
                         .build()
-                )
-                .collect(Collectors.toList());
+        );
+        return PageUt.of(mappedPage);
 
     }
 
