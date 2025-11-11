@@ -40,8 +40,9 @@ class ReportControllerTest extends ControllerTestSupport {
         ReportResBody response = ReportResBody.builder()
                                               .reportId(1L)
                                               .reportType(ReportType.USER)
+                                              .targetId(3L)
                                               .comment("홍보 목적 사용자")
-                                              .reporterName("George Taylor")
+                                              .authorId(1L)
                                               .createdAt(LocalDateTime.now())
                                               .build();
         given(reportService.postReport(any(ReportReqBody.class), anyLong())).willReturn(response);
@@ -58,8 +59,9 @@ class ReportControllerTest extends ControllerTestSupport {
                        jsonPath("$.msg").value("신고가 등록되었습니다."),
                        jsonPath("$.data.reportId").value(response.reportId()),
                        jsonPath("$.data.reportType").value(response.reportType().name()),
+                       jsonPath("$.data.targetId").value(response.targetId()),
                        jsonPath("$.data.comment").value(response.comment()),
-                       jsonPath("$.data.reporterName").value(response.reporterName()),
+                       jsonPath("$.data.authorId").value(response.authorId()),
                        jsonPath("$.data.createdAt").exists()
                );
         verify(reportService).postReport(any(ReportReqBody.class), anyLong());

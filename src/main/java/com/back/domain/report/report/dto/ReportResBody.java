@@ -10,16 +10,18 @@ import java.time.LocalDateTime;
 public record ReportResBody(
         Long reportId,
         ReportType reportType,
+        Long targetId,
         String comment,
-        String reporterName,
+        Long authorId,
         LocalDateTime createdAt) {
 
     public static ReportResBody from(Report report) {
         return ReportResBody.builder()
                             .reportId(report.getId())
                             .reportType(report.getReportType())
+                            .targetId(report.getTargetId())
                             .comment(report.getComment())
-                            .reporterName(report.getMember().getNickname())
+                            .authorId(report.getMember().getId())
                             .createdAt(report.getCreatedAt())
                             .build();
     }
