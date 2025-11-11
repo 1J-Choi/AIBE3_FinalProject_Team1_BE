@@ -2,10 +2,7 @@ package com.back.domain.category.category.entity;
 
 import com.back.global.jpa.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Category extends BaseEntity {
 
+    @Setter
     @Column(unique = true, nullable = false)
     private String name;
 

@@ -2,6 +2,7 @@ package com.back.domain.category.category.service;
 
 import com.back.domain.category.category.dto.CategoryCreateReqBody;
 import com.back.domain.category.category.dto.CategoryResBody;
+import com.back.domain.category.category.dto.CategoryUpdateReqBody;
 import com.back.domain.category.category.entity.Category;
 import com.back.domain.category.category.repository.CategoryRepository;
 import com.back.global.exception.ServiceException;
@@ -43,7 +44,7 @@ public class CategoryService {
                 .build();
 
         Category saved = categoryRepository.save(category);
-        return new CategoryResBody(saved.getId(), saved.getName(), null);
+        return CategoryResBody.of(saved);
     }
 
     private CategoryResBody createCategoryWithoutParent(String categoryName) {
@@ -52,6 +53,15 @@ public class CategoryService {
                 .build();
 
         Category saved = categoryRepository.save(category);
-        return new CategoryResBody(saved.getId(), saved.getName(), null);
+        return CategoryResBody.of(saved);
+    }
+
+    public CategoryResBody updateCategory(Long categoryId, CategoryUpdateReqBody categoryUpdateReqBody) {
+        Category category = categoryRepository.findCategoryWithChildById(categoryId).orElseThrow(
+                () -> new ServiceException("404-1", "%d번 카테고리는 존재하지 않습니다.".formatted(categoryId))
+        );
+
+        category.setName(categoryUpdateReqBody.name());
+        return CategoryResBody.of(category);
     }
 }
