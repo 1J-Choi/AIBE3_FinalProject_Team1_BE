@@ -1,6 +1,7 @@
 package com.back.domain.post.post.controller;
 
 import com.back.domain.post.post.dto.PostCreateReqBody;
+import com.back.domain.post.post.dto.PostDetailResBody;
 import com.back.domain.post.post.dto.PostListResBody;
 import com.back.domain.post.post.service.PostService;
 import com.back.global.rsData.RsData;
@@ -37,6 +38,12 @@ public class PostController {
     @GetMapping
     public ResponseEntity<List<PostListResBody>> getPostList() {
         List<PostListResBody> body = postService.getPostList();
+        return ResponseEntity.ok(body);
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostDetailResBody> getPostById(@PathVariable Long postId) {
+        PostDetailResBody body = postService.getPostById(postId);
         return ResponseEntity.ok(body);
     }
 }

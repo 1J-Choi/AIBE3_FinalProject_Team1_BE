@@ -1,9 +1,9 @@
 package com.back.domain.post.post.service;
 
+import com.back.domain.member.member.dto.AuthorDto;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
-import com.back.domain.post.post.dto.PostCreateReqBody;
-import com.back.domain.post.post.dto.PostListResBody;
+import com.back.domain.post.post.dto.*;
 import com.back.domain.post.post.entity.Post;
 import com.back.domain.post.post.entity.PostImage;
 import com.back.domain.post.post.entity.PostOption;
@@ -97,6 +97,48 @@ public class PostService {
                         .build()
                 )
                 .collect(Collectors.toList());
+
+    }
+
+    public PostDetailResBody getPostById(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() ->
+                        new ServiceException("404-1", "%d번 글은 존재하지 않는 게시글입니다.".formatted(postId))
+                );
+
+        return PostDetailResBody.builder()
+                .postId(post.getId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .categoryId(null) // 추후 카테고리 연동 필요
+                .regionIds(List.of()) // 추후 지역 연동 필요
+                .receiveMethod(post.getReceiveMethod().name())
+                .returnMethod(post.getReturnMethod().name())
+                .returnAddress1(post.getReturnAddress1())
+                .returnAddress2(post.getReturnAddress2())
+                .deposit(post.getDeposit())
+                .fee(post.getFee())
+                .options(post.getOptions().stream()
+                        .map(option -> PostOptionResBody.builder()
+                                .name(option.getName())
+                                .deposit(option.getDeposit())
+                                .fee(option.getFee())
+                                .build())
+                        .collect(Collectors.toList()))
+                .images(post.getImages().stream()
+                        .map(image -> PostImageResBody.builder()
+                                .file(image.getImageUrl())
+                                .isPrimary(image.getIsPrimary())
+                                .build()
+                        )
+                        .collect(Collectors.toList())
+                )
+                .createdAt(post.getCreatedAt())
+                .modifiedAt(post.getModifiedAt())
+                .author(AuthorDto.from(post.getAuthor()))   // MemberDto 기반 변환
+                .isFavorite(false)                         // 로그인 유저 기준은 추후 로직 추가
+                .isBanned(post.getIsBanned())
+                .build();
 
     }
 }
