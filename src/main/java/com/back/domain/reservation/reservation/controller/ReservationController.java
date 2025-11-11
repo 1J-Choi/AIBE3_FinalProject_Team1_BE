@@ -65,17 +65,20 @@ public class ReservationController {
             @RequestParam(required = false) ReservationStatus status,
             @RequestParam(required = false) String keyword
     ) {
-        Member author = memberService.getById(securityUser.getId());
-        PagePayload<HostReservationSummaryResBody> reservations = reservationService.getReceivedReservations(postId, author, pageable, status, keyword);
+        Member member = memberService.getById(securityUser.getId());
+        PagePayload<HostReservationSummaryResBody> reservations = reservationService.getReceivedReservations(postId, member, pageable, status, keyword);
 
         return ResponseEntity.ok(reservations);
     }
 
     @Transactional(readOnly = true)
     @GetMapping("/{reservationId}")
-    public ResponseEntity<ReservationDto> getReservationDetail(@PathVariable Long reservationId) {
+    public ResponseEntity<ReservationDto> getReservationDetail(
+            @PathVariable Long reservationId,
+            @AuthenticationPrincipal SecurityUser securityUser
+            ) {
         // TODO: logs 정보 가져오기 (service 에서 ReservationDto를 만들어 오는 방식 고려)
-        ReservationDto reservationDto = reservationService.getReservationDtoById(reservationId);
+        ReservationDto reservationDto = reservationService.getReservationDtoById(reservationId, securityUser.getId());
         return ResponseEntity.ok(reservationDto);
     }
 }

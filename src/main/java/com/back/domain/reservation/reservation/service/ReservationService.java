@@ -261,13 +261,13 @@ public class ReservationService {
 
     public PagePayload<HostReservationSummaryResBody> getReceivedReservations(
             Long postId,
-            Member author,
+            Member member,
             Pageable pageable,
             ReservationStatus status,
             String keyword) {
         // postId로 게시글 조회 후, 해당 게시글의 author와 요청한 author가 일치하는지 확인
         Post post = postService.getById(postId);
-        if (!post.getAuthor().getId().equals(author.getId())) {
+        if (!post.getAuthor().getId().equals(member.getId())) {
             throw new ServiceException("403-1", "해당 게시글의 호스트가 아닙니다.");
         }
 
@@ -304,9 +304,15 @@ public class ReservationService {
         return PageUt.of(reservationSummaryDtoPage);
     }
 
-    public ReservationDto getReservationDtoById(Long reservationId) {
+    public ReservationDto getReservationDtoById(Long reservationId, Long memberId) {
         Reservation reservation =  reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ServiceException("404-1", "해당 예약을 찾을 수 없습니다."));
+
+        // 권한 체크
+        if (!reservation.getAuthor().getId().equals(memberId) &&
+                !reservation.getPost().getAuthor().getId().equals(memberId)) {
+            throw new ServiceException("403-1", "해당 예약에 대한 접근 권한이 없습니다.");
+        }
 
         Post post = reservation.getPost();
         List<ReservationOption> options = reservation.getReservationOptions();
