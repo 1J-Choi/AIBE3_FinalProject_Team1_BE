@@ -3,6 +3,8 @@ package com.back.domain.report.report.handler;
 import com.back.IntegrationTestSupport;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.report.report.common.ReportType;
+import com.back.domain.report.report.common.validator.DelegatingReportValidator;
+import com.back.domain.report.report.common.validator.ReportValidator;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class DelegatingReportValidatorTest extends IntegrationTestSupport {
 
     @Autowired EntityManager em;
-    @Autowired DelegatingReportValidator reportValidator;
+    @Autowired
+    DelegatingReportValidator reportValidator;
 
     Member member;
 

@@ -5,7 +5,7 @@ import com.back.domain.member.member.repository.MemberRepository;
 import com.back.domain.report.report.dto.ReportReqBody;
 import com.back.domain.report.report.dto.ReportResBody;
 import com.back.domain.report.report.entity.Report;
-import com.back.domain.report.report.handler.ReportValidator;
+import com.back.domain.report.report.common.validator.ReportValidator;
 import com.back.domain.report.report.repository.ReportRepository;
 import com.back.global.exception.ServiceException;
 import lombok.RequiredArgsConstructor;
