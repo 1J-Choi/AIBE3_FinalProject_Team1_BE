@@ -338,7 +338,7 @@ public class ReservationService {
                 totalAmount
         );
     }
-//
+
 //    public void updateReservationStatus(Long reservationId, Long memberId, UpdateReservationStatusReqBody reqBody) {
 //        Reservation reservation = reservationRepository.findById(reservationId)
 //                .orElseThrow(() -> new ServiceException("404-1", "해당 예약을 찾을 수 없습니다."));
