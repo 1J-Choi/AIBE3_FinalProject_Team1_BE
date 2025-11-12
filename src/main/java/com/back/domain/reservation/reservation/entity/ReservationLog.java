@@ -2,10 +2,7 @@ package com.back.domain.reservation.reservation.entity;
 
 import com.back.domain.reservation.reservation.common.ReservationStatus;
 import com.back.global.jpa.entity.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -15,6 +12,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ReservationLog extends BaseEntity {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ReservationStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
