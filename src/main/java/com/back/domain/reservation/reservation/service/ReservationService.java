@@ -10,7 +10,9 @@ import com.back.domain.reservation.reservation.common.ReservationDeliveryMethod;
 import com.back.domain.reservation.reservation.common.ReservationStatus;
 import com.back.domain.reservation.reservation.dto.*;
 import com.back.domain.reservation.reservation.entity.Reservation;
+import com.back.domain.reservation.reservation.entity.ReservationLog;
 import com.back.domain.reservation.reservation.entity.ReservationOption;
+import com.back.domain.reservation.reservation.repository.ReservationLogRepository;
 import com.back.domain.reservation.reservation.repository.ReservationRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationService {
     private final ReservationRepository reservationRepository;
+    private final ReservationLogRepository reservationLogRepository;
     private final PostService postService;
 
     public Reservation create(CreateReservationReqBody reqBody, Member author) {
@@ -127,6 +130,7 @@ public class ReservationService {
             );
         }
     }
+
     private boolean isReceiveMethodAllowed(ReceiveMethod postMethod, ReservationDeliveryMethod reqMethod) {
         // ANY인 경우, 모든 방식 허용
         if (postMethod == ReceiveMethod.ANY) {
@@ -136,6 +140,7 @@ public class ReservationService {
         // Enum 이름(문자열)을 비교하여 동일한지 확인
         return postMethod.name().equals(reqMethod.name());
     }
+
     private boolean isReturnMethodAllowed(ReturnMethod postMethod, ReservationDeliveryMethod reqMethod) {
         // ANY인 경우, 모든 방식 허용
         if (postMethod == ReturnMethod.ANY) {
@@ -309,7 +314,7 @@ public class ReservationService {
     }
 
     public ReservationDto getReservationDtoById(Long reservationId, Long memberId) {
-        Reservation reservation =  reservationRepository.findById(reservationId)
+        Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ServiceException("404-1", "해당 예약을 찾을 수 없습니다."));
 
         // 권한 체크
@@ -332,9 +337,15 @@ public class ReservationService {
                 ))
                 .toList();
 
+        // ReservationLogDtoList 찾기
+        List<ReservationLogDto> logDtos = reservationLogRepository.findByReservation(reservation).stream()
+                .map(ReservationLogDto::new)
+                .toList();
+
         return new ReservationDto(
                 reservation,
                 optionDtos,
+                logDtos,
                 totalAmount
         );
     }
@@ -343,19 +354,127 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ServiceException("404-1", "해당 예약을 찾을 수 없습니다."));
 
-        // 권한 체크: 해당 예약의 작성자(게스트) or 게시글의 작성자(호스트)만 가능
-        if (!reservation.getAuthor().getId().equals(memberId) &&
-                !reservation.getPost().getAuthor().getId().equals(memberId)) {
+        // 권한 체크
+        boolean isGuest = reservation.getAuthor().getId().equals(memberId);
+        boolean isHost = reservation.getPost().getAuthor().getId().equals(memberId);
+
+        if (!isGuest && !isHost) {
             throw new ServiceException("403-1", "해당 예약의 상태를 변경할 권한이 없습니다.");
         }
 
-        // TODO: 상태 전환 로직 추가
-        // ReqBody에서 null 인 값은 변경하지 않음 (status 빼고 다 nullable)
-
-
+        // 상태별 처리 및 권한 체크
+        switch (reqBody.status()) {
+            case PENDING_PAYMENT -> {
+                // 승인 (승인 대기 -> 결제 대기)
+                validateHostOnly(isHost, "승인");
+                reservation.approve();
+            }
+            case REJECTED -> {
+                // 거절 (승인 대기 -> 승인 거절)
+                validateHostOnly(isHost, "거절");
+                reservation.reject(reqBody.rejectReason());
+            }
+            case CANCELLED -> {
+                // 취소 (여러 단계 -> 예약 취소)
+                validateGuestOnly(isGuest, "취소");
+                reservation.cancel(reqBody.cancelReason());
+            }
+            case PENDING_PICKUP -> {
+                // 결제 완료 (결제 대기 -> 수령 대기)
+                reservation.completePayment();
+            }
+            case SHIPPING -> {
+                // 택배 배송 시작 (수령 대기 -> 배송 중)
+                validateHostOnly(isHost, "배송 시작");
+                reservation.startShipping(
+                        reqBody.receiveCarrier(),
+                        reqBody.receiveTrackingNumber()
+                );
+            }
+            case INSPECTING_RENTAL -> {
+                // 대여 검수 시작
+                // (수령 대기 -> 대여 검수: 직거래)
+                // (배송 중 -> 대여 검수: 배송 완료)
+                reservation.startRentalInspection();
+            }
+            case RENTING -> {
+                // 대여 시작 (대여 검수 -> 대여 중)
+                validateGuestOnly(isGuest, "대여 시작");
+                reservation.startRenting();
+            }
+            case PENDING_RETURN -> {
+                // 반납 요청 (대여 중 -> 반납 대기)
+                reservation.requestReturn();
+            }
+            case RETURNING -> {
+                // 택배 반납 시작 (반납 대기 -> 반납 중)
+                validateGuestOnly(isGuest, "반납 시작");
+                reservation.startReturning(
+                        reqBody.returnCarrier(),
+                        reqBody.returnTrackingNumber()
+                );
+            }
+            case RETURN_COMPLETED -> {
+                // 반납 완료
+                // (반납 대기 -> 반납 완료: 직거래)
+                // (반납 중 -> 반납 완료: 택배 반납 완료)
+                reservation.completeReturn();
+            }
+            case INSPECTING_RETURN -> {
+                // 반납 검수 시작 (반납 완료 -> 반납 검수)
+                validateHostOnly(isHost, "반납 검수");
+                reservation.startReturnInspection();
+            }
+            case PENDING_REFUND -> {
+                // 환급 예정 (반납 검수 -> 환급 예정)
+                validateHostOnly(isHost, "환급 예정 처리");
+                reservation.scheduleRefund();
+            }
+            case REFUND_COMPLETED -> {
+                // 환급 완료 (환급 예정 -> 환급 완료)
+                // 시스템 또는 호스트가 처리
+                reservation.completeRefund();
+            }
+            case CLAIMING -> {
+                // 청구 시작
+                // (미반납/분실 -> 청구 진행)
+                validateHostOnly(isHost, "청구 시작");
+                reservation.startClaim();
+            }
+            case CLAIM_COMPLETED -> {
+                // 청구 완료 (청구 진행 -> 청구 완료)
+                validateHostOnly(isHost, "청구 완료 처리");
+                reservation.completeClaim();
+            }
+            case LOST_OR_UNRETURNED -> {
+                // 미반납/분실 처리 (대여 중 -> 미반납/분실)
+                validateHostOnly(isHost, "미반납/분실 처리");
+                reservation.markAsLost();
+            }
+            default -> throw new ServiceException("400-1", "지원하지 않는 상태 전환입니다.");
+        }
         reservationRepository.save(reservation);
-        // TODO: 상태 전환 로그 저장
 
+        // 상태 전환 로그 저장
+        ReservationLog log = ReservationLog.builder()
+                .reservation(reservation)
+                .status(reservation.getStatus())
+                .build();
+        reservationLogRepository.save(log);
+    }
+
+    private void validateHostOnly(boolean isHost, String action) {
+        if (!isHost) {
+            throw new ServiceException("403-2",
+                    String.format("호스트만 %s을(를) 수행할 수 있습니다.", action));
+        }
+    }
+
+    private void validateGuestOnly(boolean isGuest, String action) {
+        if (!isGuest) {
+            throw new ServiceException("403-3",
+                    String.format("게스트만 %s을(를) 수행할 수 있습니다.", action));
+        }
     }
 
     public Reservation getById(Long reservationId) {

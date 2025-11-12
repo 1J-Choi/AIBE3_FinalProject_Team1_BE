@@ -3,10 +3,7 @@ package com.back.domain.reservation.reservation.controller;
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.service.MemberService;
 import com.back.domain.reservation.reservation.common.ReservationStatus;
-import com.back.domain.reservation.reservation.dto.CreateReservationReqBody;
-import com.back.domain.reservation.reservation.dto.GuestReservationSummaryResBody;
-import com.back.domain.reservation.reservation.dto.HostReservationSummaryResBody;
-import com.back.domain.reservation.reservation.dto.ReservationDto;
+import com.back.domain.reservation.reservation.dto.*;
 import com.back.domain.reservation.reservation.entity.Reservation;
 import com.back.domain.reservation.reservation.service.ReservationService;
 import com.back.global.security.SecurityUser;
@@ -80,5 +77,15 @@ public class ReservationController {
         // TODO: logs 정보 가져오기 (service 에서 ReservationDto를 만들어 오는 방식 고려)
         ReservationDto reservationDto = reservationService.getReservationDtoById(reservationId, securityUser.getId());
         return ResponseEntity.ok(reservationDto);
+    }
+
+    @Transactional
+    @PatchMapping("/{reservationId}/status")
+    public ResponseEntity<String> updateReservationStatus(
+            @PathVariable Long reservationId,
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestBody UpdateReservationStatusReqBody reqBody ) {
+        reservationService.updateReservationStatus(reservationId, securityUser.getId(), reqBody);
+        return ResponseEntity.ok("예약 상태가 업데이트 되었습니다.");
     }
 }
