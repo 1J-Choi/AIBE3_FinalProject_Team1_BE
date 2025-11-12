@@ -148,10 +148,8 @@ public class PostService {
 
     }
 
-    public List<PostListResBody> getMyPosts(Long memberId) {
-        List<Post> posts = postRepository.findAllByAuthorId(memberId);
-
-        return posts.stream()
+    public PagePayload<PostListResBody> getMyPosts(Long memberId, Pageable pageable) {
+        Page<PostListResBody> postPage = postRepository.findAllByAuthorId(memberId, pageable)
                 .map(post -> PostListResBody.builder()
                         .postId(post.getId())
                         .title(post.getTitle())
@@ -173,7 +171,8 @@ public class PostService {
                         .isFavorite(false) // TODO: 추후 즐겨찾기 로직 추가
                         .isBanned(post.getIsBanned())
                         .build()
-                )
-                .collect(Collectors.toList());
+                );
+
+        return PageUt.of(postPage);
     }
 }

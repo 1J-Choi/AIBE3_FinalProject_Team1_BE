@@ -9,13 +9,14 @@ import com.back.global.security.SecurityUser;
 import com.back.standard.util.page.PagePayload;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -40,7 +41,11 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<PagePayload<PostListResBody>> getPostList(Pageable pageable) {
+    public ResponseEntity<PagePayload<PostListResBody>> getPostList(
+            @ParameterObject
+            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
         PagePayload<PostListResBody> body = postService.getPostList(pageable);
         return ResponseEntity.ok(body);
     }
@@ -52,8 +57,13 @@ public class PostController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<PostListResBody>> getMyPostList(@AuthenticationPrincipal SecurityUser securityUser) {
-        List<PostListResBody> body = postService.getMyPosts(securityUser.getId());
+    public ResponseEntity<PagePayload<PostListResBody>> getMyPostList(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @ParameterObject
+            @PageableDefault(size = 30, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        PagePayload<PostListResBody> body = postService.getMyPosts(securityUser.getId(), pageable);
         return ResponseEntity.ok(body);
     }
 }
