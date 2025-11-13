@@ -8,6 +8,7 @@ import com.back.domain.member.service.AuthTokenService;
 import com.back.domain.member.service.MemberService;
 import com.back.domain.member.service.RefreshTokenStore;
 import com.back.global.exception.ServiceException;
+import com.back.global.rsData.RsData;
 import com.back.global.security.SecurityUser;
 import com.back.global.web.CookieHelper;
 import jakarta.validation.Valid;
@@ -20,23 +21,23 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/members")
 @RequiredArgsConstructor
-public class MemberController {
+public class MemberController implements MemberApi{
     private final MemberService memberService;
     private final AuthTokenService authTokenService;
     private final RefreshTokenStore refreshTokenStore;
     private final CookieHelper cookieHelper;
 
     @PostMapping
-    public ResponseEntity<String> join(
+    public ResponseEntity<RsData<Void>> join(
             @Valid @RequestBody MemberJoinReqBody reqBody
     ) {
         memberService.join(reqBody);
 
-        return ResponseEntity.status(201).body("회원가입 되었습니다.");
+        return ResponseEntity.status(201).body(new RsData<>(HttpStatus.CREATED, "회원가입 되었습니다."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<MemberDto> login(
+    public ResponseEntity<RsData<MemberDto>> login(
             @Valid @RequestBody MemberLoginReqBody reqBody
     ) {
         Member member = memberService.findByEmail(reqBody.email()).orElseThrow(
@@ -50,11 +51,11 @@ public class MemberController {
         cookieHelper.setCookie("accessToken", accessToken);
         cookieHelper.setCookie("refreshToken", refreshToken);
 
-        return ResponseEntity.ok(new MemberDto(member));
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "로그인 되었습니다.", new MemberDto(member)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
+    public ResponseEntity<RsData<Void>> logout() {
         String refreshPlain = cookieHelper.getCookieValue("refreshToken", null);
         if (refreshPlain != null && !refreshPlain.isBlank()) {
             refreshTokenStore.revoke(refreshPlain);
@@ -63,15 +64,15 @@ public class MemberController {
         cookieHelper.deleteCookie("accessToken");
         cookieHelper.deleteCookie("refreshToken");
 
-        return ResponseEntity.ok("로그아웃 되었습니다.");
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "로그아웃 되었습니다."));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<MemberDto> me(
+    public ResponseEntity<RsData<MemberDto>> me(
             @AuthenticationPrincipal SecurityUser securityUser
     ) {
         Member member = memberService.getById(securityUser.getId());
 
-        return ResponseEntity.ok(new MemberDto(member));
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "현재 회원 정보입니다.", new MemberDto(member)));
     }
 }

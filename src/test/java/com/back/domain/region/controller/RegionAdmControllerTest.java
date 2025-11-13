@@ -1,12 +1,11 @@
+package com.back.domain.region.controller;
 
-package com.back.domain.category.category.controller;
-
-import com.back.domain.category.dto.CategoryCreateReqBody;
-import com.back.domain.category.dto.CategoryResBody;
-import com.back.domain.category.dto.CategoryUpdateReqBody;
-import com.back.domain.category.service.CategoryService;
 import com.back.domain.member.service.AuthTokenService;
 import com.back.domain.member.service.RefreshTokenStore;
+import com.back.domain.region.dto.RegionCreateReqBody;
+import com.back.domain.region.dto.RegionResBody;
+import com.back.domain.region.dto.RegionUpdateReqBody;
+import com.back.domain.region.service.RegionService;
 import com.back.global.security.SecurityUser;
 import com.back.global.web.CookieHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -38,10 +38,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class CategoryAdmControllerTest {
+class RegionAdmControllerTest {
 
     @MockitoBean
-    private CategoryService categoryService;
+    private RegionService regionService;
 
     @MockitoBean
     private CookieHelper cookieHelper;
@@ -92,71 +92,71 @@ class CategoryAdmControllerTest {
     }
 
     @Test
-    @DisplayName("카테고리 생성 성공")
-    void createCategory_success() throws Exception {
+    @DisplayName("지역 생성 성공")
+    void createRegion_success() throws Exception {
         // given
-        CategoryCreateReqBody reqBody = new CategoryCreateReqBody(null, "새 카테고리");
-        CategoryResBody resBody = new CategoryResBody(1L, "새 카테고리", List.of());
-        when(categoryService.createCategory(any(CategoryCreateReqBody.class))).thenReturn(resBody);
+        RegionCreateReqBody reqBody = new RegionCreateReqBody(null, "새 지역");
+        RegionResBody resBody = new RegionResBody(1L, "새 지역", List.of());
+        when(regionService.createRegion(any(RegionCreateReqBody.class))).thenReturn(resBody);
 
         // when & then
-        mockMvc.perform(post("/api/v1/adm/categories")
+        mockMvc.perform(post("/api/v1/adm/regions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reqBody))
                         .cookie(new Cookie("accessToken", "mock-access-token")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))
-                .andExpect(jsonPath("$.msg").value("카테고리 등록 성공"))
+                .andExpect(jsonPath("$.msg").value("지역 등록 성공"))
                 .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.name").value("새 카테고리"))
+                .andExpect(jsonPath("$.data.name").value("새 지역"))
                 .andExpect(jsonPath("$.data.child").isEmpty());
 
-        verify(categoryService).createCategory(any(CategoryCreateReqBody.class));
+        verify(regionService).createRegion(any(RegionCreateReqBody.class));
     }
 
     @Test
-    @DisplayName("카테고리 수정 성공")
-    void updateCategory_success() throws Exception {
+    @DisplayName("지역 수정 성공")
+    void updateRegion_success() throws Exception {
         // given
-        CategoryUpdateReqBody reqBody = new CategoryUpdateReqBody("수정된 카테고리");
-        CategoryResBody resBody = new CategoryResBody(1L, "수정된 카테고리", List.of());
-        when(categoryService.updateCategory(eq(1L), any(CategoryUpdateReqBody.class))).thenReturn(resBody);
+        RegionUpdateReqBody reqBody = new RegionUpdateReqBody("수정된 지역");
+        RegionResBody resBody = new RegionResBody(1L, "수정된 지역", List.of());
+        when(regionService.updateRegion(eq(1L), any(RegionUpdateReqBody.class))).thenReturn(resBody);
 
         // when & then
-        mockMvc.perform(patch("/api/v1/adm/categories/{id}", 1L)
+        mockMvc.perform(patch("/api/v1/adm/regions/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reqBody))
                         .cookie(new Cookie("accessToken", "mock-access-token")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.msg").value("카테고리 수정 성공"))
+                .andExpect(jsonPath("$.msg").value("지역 수정 성공"))
                 .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.name").value("수정된 카테고리"))
+                .andExpect(jsonPath("$.data.name").value("수정된 지역"))
                 .andExpect(jsonPath("$.data.child").isEmpty());
 
-        verify(categoryService).updateCategory(eq(1L), any(CategoryUpdateReqBody.class));
+        verify(regionService).updateRegion(eq(1L), any(RegionUpdateReqBody.class));
     }
 
     @Test
-    @DisplayName("카테고리 삭제 성공")
-    void deleteCategory_success() throws Exception {
+    @DisplayName("지역 삭제 성공")
+    void deleteRegion_success() throws Exception {
         // given
-        doNothing().when(categoryService).deleteCategory(1L);
+        doNothing().when(regionService).deleteRegion(1L);
 
         // when & then
-        mockMvc.perform(delete("/api/v1/adm/categories/{id}", 1L)
+        mockMvc.perform(delete("/api/v1/adm/regions/{id}", 1L)
                         .cookie(new Cookie("accessToken", "mock-access-token")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.msg").value("카테고리 삭제 성공"))
-                .andExpect(jsonPath("$.data").doesNotExist()); // data 없음
+                .andExpect(jsonPath("$.msg").value("지역 삭제 성공"))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
-        verify(categoryService).deleteCategory(1L);
+        verify(regionService).deleteRegion(1L);
     }
 
     @Test
-    @DisplayName("인증되지 않은 사용자의 카테고리 생성 시도")
-    void createCategory_unauthorized() throws Exception {
+    @DisplayName("인증되지 않은 사용자의 지역 생성 시도")
+    void createRegion_unauthorized() throws Exception {
         when(cookieHelper.getCookieValue("accessToken", ""))
                 .thenReturn("");
         when(cookieHelper.getCookieValue("refreshToken", ""))
@@ -165,31 +165,32 @@ class CategoryAdmControllerTest {
         // 토큰 검증 실패 시뮬레이션
         when(authTokenService.payload(anyString()))
                 .thenReturn(null);
+        
         // given
-        CategoryCreateReqBody reqBody = new CategoryCreateReqBody(null, "새 카테고리");
+        RegionCreateReqBody reqBody = new RegionCreateReqBody(null, "새 지역");
 
         // when & then
-        mockMvc.perform(post("/api/v1/adm/categories")
+        mockMvc.perform(post("/api/v1/adm/regions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reqBody)))
                 .andExpect(status().isUnauthorized());
 
-        verifyNoInteractions(categoryService);
+        verifyNoInteractions(regionService);
     }
 
     @Test
-    @DisplayName("잘못된 입력으로 카테고리 생성 실패")
-    void createCategory_invalidInput() throws Exception {
+    @DisplayName("잘못된 입력으로 지역 생성 실패")
+    void createRegion_invalidInput() throws Exception {
         // given
-        CategoryCreateReqBody reqBody = new CategoryCreateReqBody(null, "   ");
+        RegionCreateReqBody reqBody = new RegionCreateReqBody(null, "   ");
 
         // when & then
-        mockMvc.perform(post("/api/v1/adm/categories")
+        mockMvc.perform(post("/api/v1/adm/regions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reqBody))
                         .cookie(new Cookie("accessToken", "mock-access-token")))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(categoryService);
+        verifyNoInteractions(regionService);
     }
 }
