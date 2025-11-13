@@ -1,8 +1,8 @@
-package com.back.domain.region.region.controller;
+package com.back.domain.category.controller;
 
-import com.back.domain.region.common.ChildRegion;
-import com.back.domain.region.dto.RegionResBody;
-import com.back.domain.region.service.RegionService;
+import com.back.domain.category.common.ChildCategory;
+import com.back.domain.category.dto.CategoryResBody;
+import com.back.domain.category.service.CategoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
@@ -28,85 +27,85 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class RegionControllerTest {
+class CategoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private RegionService regionService;
+    private CategoryService categoryService;
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("지역 목록 조회 성공 - 지역이 있는 경우")
-    void readRegions_withRegions() throws Exception {
+    @DisplayName("카테고리 목록 조회 성공 - 카테고리가 있는 경우")
+    void readCategories_withCategories() throws Exception {
         // given
-        RegionResBody region1 = new RegionResBody(1L, "서울", List.of());
-        RegionResBody region2 = new RegionResBody(2L, "부산", List.of());
-        List<RegionResBody> regions = Arrays.asList(region1, region2);
+        CategoryResBody category1 = new CategoryResBody(1L, "카테고리1", List.of());
+        CategoryResBody category2 = new CategoryResBody(2L, "카테고리2", List.of());
+        List<CategoryResBody> categories = Arrays.asList(category1, category2);
 
-        when(regionService.getRegions()).thenReturn(regions);
+        when(categoryService.getCategories()).thenReturn(categories);
 
         // when & then
-        mockMvc.perform(get("/api/v1/regions")
+        mockMvc.perform(get("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.msg").value("지역 목록 조회 성공"))
+                .andExpect(jsonPath("$.msg").value("카테고리 목록 조회 성공"))
                 .andExpect(jsonPath("$.data", hasSize(2)))
                 .andExpect(jsonPath("$.data[0].id").value(1))
-                .andExpect(jsonPath("$.data[0].name").value("서울"))
+                .andExpect(jsonPath("$.data[0].name").value("카테고리1"))
                 .andExpect(jsonPath("$.data[0].child").isEmpty())
                 .andExpect(jsonPath("$.data[1].id").value(2))
-                .andExpect(jsonPath("$.data[1].name").value("부산"))
+                .andExpect(jsonPath("$.data[1].name").value("카테고리2"))
                 .andExpect(jsonPath("$.data[1].child").isEmpty());
     }
 
     @Test
-    @DisplayName("지역 목록 조회 성공 - 빈 목록")
-    void readRegions_withEmptyList() throws Exception {
+    @DisplayName("카테고리 목록 조회 성공 - 빈 목록")
+    void readCategories_withEmptyList() throws Exception {
         // given
-        when(regionService.getRegions()).thenReturn(List.of());
+        when(categoryService.getCategories()).thenReturn(List.of());
 
         // when & then
-        mockMvc.perform(get("/api/v1/regions")
+        mockMvc.perform(get("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.msg").value("지역 목록 조회 성공"))
+                .andExpect(jsonPath("$.msg").value("카테고리 목록 조회 성공"))
                 .andExpect(jsonPath("$.data", hasSize(0)));
     }
 
     @Test
-    @DisplayName("지역 목록 조회 성공 - 계층 구조 포함")
-    void readRegions_withHierarchy() throws Exception {
+    @DisplayName("카테고리 목록 조회 성공 - 계층 구조 포함")
+    void readCategories_withHierarchy() throws Exception {
         // given
-        RegionResBody childRegion = new RegionResBody(2L, "강남구", List.of());
-        RegionResBody parentRegion = new RegionResBody(
+        CategoryResBody childCategory = new CategoryResBody(2L, "하위카테고리", List.of());
+        CategoryResBody parentCategory = new CategoryResBody(
                 1L,
-                "서울",
-                Stream.of(childRegion).map(r -> new ChildRegion(r.id(), r.name())).toList()
+                "상위카테고리",
+                List.of(new ChildCategory(childCategory.id(), childCategory.name()))
         );
-        List<RegionResBody> regions = List.of(parentRegion);
+        List<CategoryResBody> categories = List.of(parentCategory);
 
-        when(regionService.getRegions()).thenReturn(regions);
+        when(categoryService.getCategories()).thenReturn(categories);
 
         // when & then
-        mockMvc.perform(get("/api/v1/regions")
+        mockMvc.perform(get("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.msg").value("지역 목록 조회 성공"))
+                .andExpect(jsonPath("$.msg").value("카테고리 목록 조회 성공"))
                 .andExpect(jsonPath("$.data", hasSize(1)))
                 .andExpect(jsonPath("$.data[0].id").value(1))
-                .andExpect(jsonPath("$.data[0].name").value("서울"))
+                .andExpect(jsonPath("$.data[0].name").value("상위카테고리"))
                 .andExpect(jsonPath("$.data[0].child", hasSize(1)))
                 .andExpect(jsonPath("$.data[0].child[0].id").value(2))
-                .andExpect(jsonPath("$.data[0].child[0].name").value("강남구"));
+                .andExpect(jsonPath("$.data[0].child[0].name").value("하위카테고리"));
     }
 }
