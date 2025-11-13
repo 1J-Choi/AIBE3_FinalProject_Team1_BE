@@ -1,14 +1,14 @@
-package com.back.domain.report.report.service;
+package com.back.domain.report.service;
 
 import com.back.domain.member.member.entity.Member;
 import com.back.domain.member.member.repository.MemberRepository;
-import com.back.domain.report.report.common.ReportType;
-import com.back.domain.report.report.common.validator.ReportValidator;
-import com.back.domain.report.report.dto.ReportReqBody;
-import com.back.domain.report.report.dto.ReportResBody;
-import com.back.domain.report.report.entity.Report;
-import com.back.domain.report.report.repository.ReportQueryRepository;
-import com.back.domain.report.report.repository.ReportRepository;
+import com.back.domain.report.common.ReportType;
+import com.back.domain.report.common.validator.ReportValidator;
+import com.back.domain.report.dto.ReportReqBody;
+import com.back.domain.report.dto.ReportResBody;
+import com.back.domain.report.entity.Report;
+import com.back.domain.report.repository.ReportQueryRepository;
+import com.back.domain.report.repository.ReportRepository;
 import com.back.global.exception.ServiceException;
 import com.back.standard.util.page.PagePayload;
 import com.back.standard.util.page.PageUt;

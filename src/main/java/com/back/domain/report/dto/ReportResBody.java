@@ -1,7 +1,7 @@
-package com.back.domain.report.report.dto;
+package com.back.domain.report.dto;
 
-import com.back.domain.report.report.common.ReportType;
-import com.back.domain.report.report.entity.Report;
+import com.back.domain.report.common.ReportType;
+import com.back.domain.report.entity.Report;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 

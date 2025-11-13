@@ -1,8 +1,8 @@
-package com.back.domain.report.report.repository;
+package com.back.domain.report.repository;
 
-import com.back.domain.report.report.common.ReportType;
-import com.back.domain.report.report.dto.ReportResBody;
-import com.back.domain.report.report.entity.Report;
+import com.back.domain.report.common.ReportType;
+import com.back.domain.report.dto.ReportResBody;
+import com.back.domain.report.entity.Report;
 import com.back.global.queryDsl.CustomQuerydslRepositorySupport;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;

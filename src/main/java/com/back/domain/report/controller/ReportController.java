@@ -1,8 +1,8 @@
-package com.back.domain.report.report.controller;
+package com.back.domain.report.controller;
 
-import com.back.domain.report.report.dto.ReportReqBody;
-import com.back.domain.report.report.dto.ReportResBody;
-import com.back.domain.report.report.service.ReportService;
+import com.back.domain.report.dto.ReportReqBody;
+import com.back.domain.report.dto.ReportResBody;
+import com.back.domain.report.service.ReportService;
 import com.back.global.security.SecurityUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
