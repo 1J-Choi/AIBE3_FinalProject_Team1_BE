@@ -325,28 +325,33 @@ public class ReservationService {
 
         // 상태별 처리
         switch (reqBody.status()) {
-            case PENDING_PAYMENT -> reservation.approve();
+            // 추가 데이터가 필요한 경우
             case REJECTED -> reservation.reject(reqBody.rejectReason());
             case CANCELLED -> reservation.cancel(reqBody.cancelReason());
-            case PENDING_PICKUP -> reservation.completePayment();
             case SHIPPING -> reservation.startShipping(
                     reqBody.receiveCarrier(),
                     reqBody.receiveTrackingNumber()
             );
-            case INSPECTING_RENTAL -> reservation.startRentalInspection();
-            case RENTING -> reservation.startRenting();
-            case PENDING_RETURN -> reservation.requestReturn();
             case RETURNING -> reservation.startReturning(
                     reqBody.returnCarrier(),
                     reqBody.returnTrackingNumber()
             );
-            case RETURN_COMPLETED -> reservation.completeReturn();
-            case INSPECTING_RETURN -> reservation.startReturnInspection();
-            case PENDING_REFUND -> reservation.scheduleRefund();
-            case REFUND_COMPLETED -> reservation.completeRefund();
-            case CLAIMING -> reservation.startClaim();
-            case CLAIM_COMPLETED -> reservation.completeClaim();
-            case LOST_OR_UNRETURNED -> reservation.markAsLost();
+
+            // 단순 상태 전환 (명시적으로 나열)
+            case PENDING_PAYMENT,
+                 PENDING_PICKUP,
+                 INSPECTING_RENTAL,
+                 RENTING,
+                 PENDING_RETURN,
+                 RETURN_COMPLETED,
+                 INSPECTING_RETURN,
+                 PENDING_REFUND,
+                 REFUND_COMPLETED,
+                 LOST_OR_UNRETURNED,
+                 CLAIMING,
+                 CLAIM_COMPLETED -> reservation.changeStatus(reqBody.status());
+
+            // 지원하지 않는 상태
             default -> throw new ServiceException(HttpStatus.BAD_REQUEST, "지원하지 않는 상태 전환입니다.");
         }
 
