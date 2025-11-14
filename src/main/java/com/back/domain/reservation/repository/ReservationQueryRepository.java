@@ -1,7 +1,7 @@
 package com.back.domain.reservation.repository;
 
-import com.back.domain.member.entity.Member;
 import com.back.domain.member.entity.QMember;
+import com.back.domain.member.entity.Member;
 import com.back.domain.post.entity.Post;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.entity.Reservation;
@@ -195,6 +195,19 @@ public class ReservationQueryRepository extends CustomQuerydslRepositorySupport
 
     private BooleanExpression statusEq(ReservationStatus status) {
         return status != null ? reservation.status.eq(status) : null;
+    }
+
+    public List<Reservation> findWithPostAndAuthorByIds(List<Long> ids) {
+        return select(reservation)
+                .from(reservation)
+                .leftJoin(reservation.author, new QMember("reservationAuthor"))
+                .fetchJoin()
+                .leftJoin(reservation.post, post)
+                .fetchJoin()
+                .leftJoin(post.author, new QMember("postAuthor"))
+                .fetchJoin()
+                .where(reservation.id.in(ids))
+                .fetch();
     }
 
     private BooleanExpression postTitleContains(String keyword) {
