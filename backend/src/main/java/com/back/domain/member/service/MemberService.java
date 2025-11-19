@@ -2,13 +2,17 @@ package com.back.domain.member.service;
 
 import com.back.domain.member.common.MemberRole;
 import com.back.domain.member.dto.MemberJoinReqBody;
+import com.back.domain.member.dto.MemberUpdateReqBody;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.ServiceException;
+import com.back.global.s3.S3Uploader;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -17,6 +21,7 @@ import java.util.Optional;
 public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final S3Uploader s3;
 
     public long count() {
         return memberRepository.count();
@@ -46,5 +51,30 @@ public class MemberService {
         if (!passwordEncoder.matches(password, member.getPassword())) {
             throw new ServiceException(HttpStatus.NOT_FOUND, "비밀번호가 올바르지 않습니다.");
         }
+    }
+
+    public Member updateMember(Long memberId, MemberUpdateReqBody reqBody, MultipartFile profileImage) {
+        Member member = getById(memberId);
+        member.updateMember(reqBody);
+
+        // 프로필 이미지 등록
+        if (profileImage != null && !profileImage.isEmpty()) {
+            // 기존 이미지가 DB에 기록되어 있다면 S3에서 파일 삭제
+            if (member.getProfileImgUrl() != null) {
+                s3.delete(member.getProfileImgUrl());
+            }
+            String profileImgUrl = s3.upload(profileImage);
+            member.updateProfileImage(profileImgUrl);
+        }
+        // removeProfileImage가 true 면 프로필 이미지 삭제
+        else if (reqBody.removeProfileImage()) {
+            // 기존 이미지가 DB에 기록되어 있다면 S3에서 파일 삭제
+            if (member.getProfileImgUrl() != null) {
+                s3.delete(member.getProfileImgUrl());
+            }
+            member.updateProfileImage(null);
+        }
+
+        return memberRepository.save(member);
     }
 }

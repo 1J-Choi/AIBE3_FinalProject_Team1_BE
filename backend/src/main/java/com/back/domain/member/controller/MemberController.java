@@ -1,9 +1,6 @@
 package com.back.domain.member.controller;
 
-import com.back.domain.member.dto.MemberDto;
-import com.back.domain.member.dto.MemberJoinReqBody;
-import com.back.domain.member.dto.MemberLoginReqBody;
-import com.back.domain.member.dto.SimpleMemberDto;
+import com.back.domain.member.dto.*;
 import com.back.domain.member.entity.Member;
 import com.back.domain.member.service.AuthTokenService;
 import com.back.domain.member.service.MemberService;
@@ -18,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -75,6 +73,17 @@ public class MemberController implements MemberApi{
         Member member = memberService.getById(securityUser.getId());
 
         return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "현재 회원 정보입니다.", new MemberDto(member)));
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<RsData<MemberDto>> updateMe(
+            @AuthenticationPrincipal SecurityUser securityUser,
+            @Valid @RequestPart(value = "reqBody") MemberUpdateReqBody reqBody,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) {
+        Member member = memberService.updateMember(securityUser.getId(), reqBody, profileImage);
+
+        return ResponseEntity.ok(new RsData<>(HttpStatus.OK, "회원 정보가 수정되었습니다.", new MemberDto(member)));
     }
 
     @GetMapping("/{id}")
