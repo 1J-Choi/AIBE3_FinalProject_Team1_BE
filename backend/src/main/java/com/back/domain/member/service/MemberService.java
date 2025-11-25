@@ -7,7 +7,6 @@ import com.back.domain.member.entity.Member;
 import com.back.domain.member.repository.MemberRepository;
 import com.back.global.exception.ServiceException;
 import com.back.global.s3.S3Uploader;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,9 +40,7 @@ public class MemberService {
 
     public Member join(MemberJoinReqBody reqBody, MemberRole role) {
         String password = passwordEncoder.encode(reqBody.password());
-        Member member = new Member(reqBody.email(), password, reqBody.name(),
-                reqBody.phoneNumber(), reqBody.address1(), reqBody.address2(),
-                reqBody.nickname(), role);
+        Member member = new Member(reqBody.email(), password, reqBody.nickname(), role);
         return memberRepository.save(member);
     }
 
@@ -76,5 +73,9 @@ public class MemberService {
         }
 
         return memberRepository.save(member);
+    }
+
+    public boolean existsByNickname(String nickname) {
+        return memberRepository.existsByNickname(nickname);
     }
 }
