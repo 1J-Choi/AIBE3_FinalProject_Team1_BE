@@ -4,7 +4,7 @@ spring:
   config:
     import: optional:file:.env[.properties], classpath:system-prompt.yml
   profiles:
-    active: dev
+    active: prod
   output:
     ansi:
       enabled: always
@@ -62,4 +62,4 @@ custom:
 cloud:
   aws:
     s3:
-      bucket: dev-chwimeet-bucket-1
+      bucket: ${CLOUD__AWS__S3__BUCKET}
