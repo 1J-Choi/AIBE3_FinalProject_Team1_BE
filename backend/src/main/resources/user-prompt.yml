@@ -7,6 +7,9 @@ custom:
         [카테고리 목록(JSON)]
         {categoriesJson}
         
+        [추가 정보]
+        {additionalInfo}
+        
         위 이미지들을 참고하여, 빌려주는 사람 입장에서 친근하게 물품 소개 글을 작성하고 JSON으로 반환해주세요.
         
         - 제목(title)은 간단하고 명확하게

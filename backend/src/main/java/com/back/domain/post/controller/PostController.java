@@ -141,8 +141,10 @@ public class PostController implements PostApi {
     }
 
     @PostMapping("/genDetail")
-    public ResponseEntity<RsData<GenPostDetailResBody>> genDetail(@RequestPart("images") List<MultipartFile> imageFiles) {
-        GenPostDetailResBody result = postContentGenerateService.generatePostDetail(imageFiles);
+    public ResponseEntity<RsData<GenPostDetailResBody>> genDetail(
+            @RequestPart("images") List<MultipartFile> imageFiles,
+            @RequestPart("additionalInfo") String additionalInfo) {
+        GenPostDetailResBody result = postContentGenerateService.generatePostDetail(imageFiles, additionalInfo);
         RsData<GenPostDetailResBody> response = new RsData<>(HttpStatus.OK, "응답 생성 성공", result);
         return ResponseEntity.ok(response);
     }

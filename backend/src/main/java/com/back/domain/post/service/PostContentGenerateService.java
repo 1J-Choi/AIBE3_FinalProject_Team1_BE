@@ -29,12 +29,14 @@ public class PostContentGenerateService {
     @Value("${custom.ai.user.default-post-detail-gen-prompt}")
     private String defaultUserPrompt;
 
-    public GenPostDetailResBody generatePostDetail(List<MultipartFile> imageFiles) {
+    public GenPostDetailResBody generatePostDetail(List<MultipartFile> imageFiles, String additionalInfo) {
         OpenAiImageInputValidator.validateImages(imageFiles);
 
         String categoriesJson = getCategoriesJson();
 
-        String userPrompt = defaultUserPrompt.replace("{categoriesJson}", categoriesJson);
+        String userPrompt = defaultUserPrompt
+                .replace("{categoriesJson}", categoriesJson)
+                .replace("{additionalInfo}", additionalInfo == null ? "" : additionalInfo);
 
         GenPostDetailResBody resBody = chatClient.prompt()
                 .system(systemPrompt)
