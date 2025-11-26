@@ -112,7 +112,7 @@ public class PostService {
 
         if (regionIds != null && regionIds.isEmpty()) regionIds = null;
 
-        Page<Post> postPage = hasFilter ? this.postQueryRepository.findFilteredPosts(keyword, categoryId, regionIds, pageable) : this.postRepository.findAll(pageable);
+        Page<Post> postPage = hasFilter ? this.postQueryRepository.findFilteredPosts(keyword, categoryId, regionIds, pageable) : this.postRepository.findByIsBannedFalse(pageable);
 
         Page<PostListResBody> mappedPage = postPage.map(post -> {
 
