@@ -30,7 +30,7 @@ public class PostSearchService {
 	@Value("${custom.ai.rag-llm-answer-prompt}")
 	private String ragPrompt;
 
-	@Transactional
+	@Transactional(readOnly = true)
 	public List<PostListResBody> searchPosts(String query, Long memberId) {
 
 		List<Long> candidatePostIds = postVectorService.searchPostIds(query, 5);
