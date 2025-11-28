@@ -100,81 +100,37 @@ jobs:
           ./gradlew --version
           java -version
 
-      - name: Temporarily disable JOOQ repository
+      - name: Initialize database schema
         run: |
-          echo "=== Temporarily moving JOOQ repository ==="
-          if [ -f "src/main/java/com/back/domain/review/repository/ReviewJooqRepository.java" ]; then
-            mv src/main/java/com/back/domain/review/repository/ReviewJooqRepository.java \
-               src/main/java/com/back/domain/review/repository/ReviewJooqRepository.java.bak
-            echo "✅ Moved ReviewJooqRepository.java"
+          echo "=== Loading schema from SQL file ==="
+          
+          # schema.sql이 있으면 직접 로드
+          if [ -f "src/main/resources/schema.sql" ]; then
+            docker exec -i chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} chwimeet < src/main/resources/schema.sql
+            echo "✅ Schema loaded from SQL file"
+          else
+            echo "❌ schema.sql not found"
+            exit 1
           fi
-
-      - name: Initialize database schema with JPA
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/chwimeet
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          SPRING_JPA_HIBERNATE_DDL_AUTO: update
-        run: |
-          echo "=== Initializing DB Schema with JPA ==="
-          
-          # Spring Boot를 60초간 실행해서 JPA가 스키마 생성
-          timeout 60s ./gradlew bootRun --no-daemon || true
-          
-          sleep 5
           
           # 테이블 확인
-          echo "=== Checking tables ==="
+          echo "=== Tables in database ==="
           docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -e "USE chwimeet; SHOW TABLES;"
-
-      - name: Restore JOOQ repository
-        if: always()
-        run: |
-          echo "=== Restoring JOOQ repository ==="
-          if [ -f "src/main/java/com/back/domain/review/repository/ReviewJooqRepository.java.bak" ]; then
-            mv src/main/java/com/back/domain/review/repository/ReviewJooqRepository.java.bak \
-               src/main/java/com/back/domain/review/repository/ReviewJooqRepository.java
-            echo "✅ Restored ReviewJooqRepository.java"
-          fi
 
       - name: Generate JOOQ sources
         env:
-          SPRING__DATASOURCE__URL: jdbc:mariadb://localhost:3306/chwimeet?currentSchema=chwimeet
+          SPRING__DATASOURCE__URL: jdbc:mariadb://localhost:3306/chwimeet
           SPRING__DATASOURCE__USERNAME: root
           SPRING__DATASOURCE__PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           echo "=== Starting JOOQ Generation ==="
+          ./gradlew generateJooq --no-daemon
           
-          # 먼저 테이블 확인
-          echo "=== Tables available for JOOQ ==="
-          docker exec chwimeet-mariadb mariadb -uroot -p${{ secrets.DB_PASSWORD }} -e "USE chwimeet; SHOW TABLES;"
-          
-          echo "=== Running JOOQ generation ==="
-          ./gradlew generateJooq --info --stacktrace --no-daemon 2>&1 | tee jooq-generation.log
-          echo "=== JOOQ Generation Complete ==="
-          
-          # 결과 확인
-          if [ -d "build/generated-src/jooq/main" ]; then
-            echo "✅ JOOQ directory exists"
-          
-            # 생성된 파일 확인
-            if [ -d "build/generated-src/jooq/main/com/back/jooq/tables" ]; then
-              echo "=== Generated JOOQ tables ==="
-              ls -la build/generated-src/jooq/main/com/back/jooq/tables/ || echo "Tables directory exists but is empty"
-            else
-              echo "❌ Tables directory not found in JOOQ output"
-            fi
-          
-            # 전체 구조 확인
-            echo "=== Full JOOQ directory structure ==="
-            find build/generated-src/jooq/main -type f || echo "No files found"
+          if [ -d "build/generated-src/jooq/main/com/back/jooq/tables" ]; then
+            echo "✅ JOOQ generated successfully"
+            ls -la build/generated-src/jooq/main/com/back/jooq/tables/
           else
-            echo "❌ JOOQ directory NOT found"
-            echo "=== Checking what was generated ==="
-            ls -laR build/generated-src/ 2>/dev/null || echo "generated-src directory doesn't exist"
-          
-            echo "=== JOOQ Generation Log (last 50 lines) ==="
-            tail -50 jooq-generation.log
+            echo "❌ JOOQ generation failed"
             exit 1
           fi
 
