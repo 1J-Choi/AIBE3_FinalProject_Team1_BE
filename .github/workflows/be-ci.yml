@@ -64,14 +64,12 @@ jobs:
 
       # .env 파일 생성
       - name: Create .env file
-        working-directory: backend
         run: |
           echo "${{ secrets.DOT_ENV_CI }}" > .env
           echo "✅ .env file created"
 
       # Docker Compose로 MariaDB & Redis 시작
       - name: Start MariaDB and Redis
-        working-directory: backend
         run: |
           docker compose up -d mariadb redis
           echo "⏳ Waiting for services to be ready..."
@@ -94,14 +92,20 @@ jobs:
           done
           echo "✅ Redis is ready"
 
-      - name: Make gradlew executable (Linux)
+      - name: Make gradlew executable
         run: chmod +x ./gradlew
 
       - name: Print versions
         run: |
           ./gradlew --version
           java -version
+
+      # JOOQ 생성 (환경변수 직접 전달)
       - name: Generate JOOQ sources
+        env:
+          SPRING__DATASOURCE__URL: jdbc:mariadb://localhost:3306/chwimeet?currentSchema=chwimeet
+          SPRING__DATASOURCE__USERNAME: root
+          SPRING__DATASOURCE__PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           echo "=== Starting JOOQ Generation ==="
           ./gradlew generateJooq --info --stacktrace --no-daemon 2>&1 | tee jooq-generation.log
@@ -155,5 +159,4 @@ jobs:
       # Docker Compose 정리
       - name: Stop Docker services
         if: always()
-        working-directory: backend
         run: docker compose down -v
