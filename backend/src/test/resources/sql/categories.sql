@@ -1,7 +1,3 @@
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE category;
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- 부모 카테고리
 INSERT INTO category (id, name, parent_id, created_at, modified_at)
 VALUES
