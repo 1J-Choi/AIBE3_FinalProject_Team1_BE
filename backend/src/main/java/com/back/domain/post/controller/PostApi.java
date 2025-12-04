@@ -1,8 +1,16 @@
 package com.back.domain.post.controller;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.back.domain.post.dto.req.PostCreateReqBody;
+import com.back.domain.post.dto.req.PostUpdateReqBody;
+import com.back.domain.post.dto.res.PostCreateResBody;
+import com.back.domain.post.dto.res.PostDetailResBody;
+import com.back.domain.post.dto.res.PostListResBody;
+import com.back.global.rsData.RsData;
+import com.back.global.security.SecurityUser;
+import com.back.standard.util.page.PagePayload;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,18 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.back.domain.post.dto.req.PostCreateReqBody;
-import com.back.domain.post.dto.req.PostUpdateReqBody;
-import com.back.domain.post.dto.res.PostCreateResBody;
-import com.back.domain.post.dto.res.PostDetailResBody;
-import com.back.domain.post.dto.res.PostListResBody;
-import com.back.global.rsData.RsData;
-import com.back.global.security.SecurityUser;
-import com.back.standard.util.page.PagePayload;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Tag(name = "Post API", description = "게시글 기능 관련 API")
 public interface PostApi {
@@ -92,9 +90,6 @@ public interface PostApi {
 		@PathVariable Long postId,
 		@AuthenticationPrincipal SecurityUser user
 	);
-
-	@Operation(summary = "게시글 후기 요약 API", description = "AI가 특정 게시글의 후기 목록을 요약합니다.")
-	ResponseEntity<RsData<String>> summarizeReviews(@PathVariable Long postId);
 
 	@Operation(summary = "AI 검색 API", description = "유사 게시글을 AI로 검색하고 설명을 생성합니다.")
 	ResponseEntity<RsData<?>> searchPostsWithAi(
