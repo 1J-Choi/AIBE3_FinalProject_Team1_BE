@@ -36,7 +36,7 @@ class ReservationControllerTest extends BaseContainerIntegrationTest {
 
     @Test
     @DisplayName("예약 등록 테스트")
-    @WithUserDetails("user3@example.com")
+    @WithUserDetails("user1@example.com")
     void createReservationTest() throws Exception {
         LocalDateTime reservationStartAt = LocalDateTime.now().plusDays(30);
         LocalDateTime reservationEndAt = LocalDateTime.now().plusDays(31);
@@ -92,9 +92,10 @@ class ReservationControllerTest extends BaseContainerIntegrationTest {
                         jsonPath("$.data.content").isArray(),
                         jsonPath("$.data.content", hasSize(greaterThanOrEqualTo(0))),
                         jsonPath("$.data.page").exists(),
-                        jsonPath("$.data.size").exists(),
-                        jsonPath("$.data.totalElements").exists(),
-                        jsonPath("$.data.totalPages").exists()
+                        jsonPath("$.data.page.page").isNumber(),
+                        jsonPath("$.data.page.size").isNumber(),
+                        jsonPath("$.data.page.totalElements").isNumber(),
+                        jsonPath("$.data.page.totalPages").isNumber()
                 );
     }
 }
