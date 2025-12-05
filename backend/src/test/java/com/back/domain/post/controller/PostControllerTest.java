@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -140,5 +141,49 @@ class PostControllerTest {
 		mockMvc.perform(delete("/api/v1/posts/{id}", 4L))
 			.andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.msg").value("본인의 게시글만 삭제할 수 있습니다."));
+	}
+
+	@Test
+	@DisplayName("게시글 수정 테스트")
+	@WithUserDetails("user1@example.com")
+	void updatePost_success() throws Exception {
+
+		String reqBody = """
+			{
+			    "title": "수정된 제목",
+			    "content": "수정된 내용",
+			    "receiveMethod": "DIRECT",
+			    "returnMethod": "DIRECT",
+			    "returnAddress1": "서울특별시 강남구",
+			    "returnAddress2": "역삼동",
+			    "regionIds": [1],
+			    "categoryId": 1,
+			    "deposit": 5000,
+			    "fee": 3000,
+			    "options": [],
+			    "images": [
+			        {
+			            "id": 1,
+			            "isPrimary": true
+			        }
+			    ]
+			}
+			""";
+
+		MockMultipartFile json = new MockMultipartFile(
+			"request",
+			"",
+			"application/json",
+			reqBody.getBytes()
+		);
+
+		mockMvc.perform(multipart("/api/v1/posts/{id}", 1L)
+				.file(json)
+				.with(request -> {
+					request.setMethod("PUT");
+					return request;
+				}))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.msg").value("게시글이 수정되었습니다."));
 	}
 }
