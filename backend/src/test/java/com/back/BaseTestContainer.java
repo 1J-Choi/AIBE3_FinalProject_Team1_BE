@@ -4,21 +4,23 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public abstract class BaseTestContainer {
 
-    private static final String TEST_SCHEMA = "chwimeet_test";
+    private static final String TEST_SCHEMA = "chwimeet";
 
-    @Container
     static final MariaDBContainer<?> mariaDB = new MariaDBContainer<>("mariadb:11.7")
             .withDatabaseName(TEST_SCHEMA)
             .withUsername("test")
             .withPassword("test")
             .withReuse(true);
+
+    static {
+        mariaDB.start();
+    }
 
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
