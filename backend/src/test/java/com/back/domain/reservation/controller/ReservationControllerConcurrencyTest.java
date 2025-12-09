@@ -1,5 +1,7 @@
 package com.back.domain.reservation.controller;
 
+import com.back.BaseContainerIntegrationTest;
+import com.back.BaseTestContainer;
 import com.back.config.TestConfig;
 import com.back.domain.reservation.common.ReservationStatus;
 import com.back.domain.reservation.dto.UpdateReservationStatusReqBody;
@@ -8,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -18,6 +21,7 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +46,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
         "/sql/notifications.sql"
 })
 @Sql(scripts = "/sql/clean-up.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-public class ReservationControllerConcurrencyTest {
+public class ReservationControllerConcurrencyTest extends BaseTestContainer {
 
     @Autowired
     protected MockMvc mockMvc;
