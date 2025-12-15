@@ -94,7 +94,7 @@
 - 게시글 목록 조회 기능
 - 카테고리, 지역, 키워드 기준 검색 가능
 
-### 게시글 상세 조회회
+### 게시글 상세 조회
 
 ![게시글상세조회](images/게시글/게시글%20상세.gif)
 
@@ -162,7 +162,7 @@
 
 <div align="center">
   <img 
-    src="https://raw.githubusercontent.com/kku1403/AIBE3_FinalProject_Team1_BE/main/images/%EC%B1%84%ED%8C%85/%EC%B1%84%ED%8C%85.gif"
+    src="images/%EC%B1%84%ED%8C%85/%EC%B1%84%ED%8C%85.gif"
     width="700"
     alt="실시간 채팅 기능 시연"
   />
