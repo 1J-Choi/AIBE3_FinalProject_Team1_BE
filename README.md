@@ -412,26 +412,37 @@ Quartz는 Job과 Trigger를 분리해 작업 단위별 스케줄 관리가 가�
 <br>
 
 
-# ⚙️ 기능 구현 방식
+# ⚙️ 구조 설계 및 구현
 
 <details>
 <summary><strong>💬 Redis Pub/Sub 기반 실시간 채팅</strong></summary>
 
-<br>
-
-### 도입 배경
-단일 서버 환경에서는 WebSocket 기반 채팅만으로도 충분했지만,   
-**미래의 서버 확장**을 고려하면서 서버 환경에서 발생할 수 있는 메시지 전달 문제를 인지했습니다.
-
-예를 들어, 같은 채팅방 사용자라도 서로 다른 서버에 연결될 경우 메시지가 전달되지 않는 상황이 발생할 수 있었습니다.
-
-이를 해결하기 위해 Redis Pub/Sub을 메시지 브로커로 활용하는 구조를 도입했습니다.
+### 기능 개요
+WebSocket과 Redis Pub/Sub을 활용해, 다중 서버 환경에서도 채팅 메시지가 모든 사용자에게 실시간으로 전달되도록 구현했습니다.
 
 ---
 
-### 구조 및 동작 방식
-채팅 메시지는 다음 흐름으로 처리됩니다.
+### 설계 목표
+- **WebSocket 연결 단계에서 인증 처리**  
+메시지 처리 과정에서는 인증 로직이 반복되지 않도록 연결 시점에서 사용자 인증을 완료
+  
+- **비즈니스 로직과 전송 계층 분리**  
+채팅 도메인 로직은 `chatService`에 집중시키고, Pub/Sub 및 WebSocket 전송 로직은 별도 컴포넌트로 분리
 
+- **서버 간 메시지 동기화 보장**  
+서로 다른 서버 인스턴스에 연결된 사용자도 동일한 채팅 메시지를 실시간으로 수신
+
+- **실시간 처리와 데이터 정합성 분리**  
+메시지 저장은 DB에서 처리하고, Redis는 실시간 전달 및 서버 간 동기화 역할만 담당
+
+---
+
+### 채팅 메시지 처리 구조 및 구현 전략
+#### 1. 메시지 전달 구조
+사용자가 WebSocket으로 메시지를 전송하면,  
+서버는 해당 메시지를 Redis Channel에 Publish하고,  
+이를 구독 중인 모든 서버 인스턴스가 메시지를 수신하여  
+각 서버에 연결된 클라이언트에게 다시 전달됩니다.  
 ```
 사용자
   │
@@ -443,31 +454,110 @@ Quartz는 Job과 Trigger를 분리해 작업 단위별 스케줄 관리가 가�
   │                                  │
   ▼                                  ▼
 사용자                             사용자
+```
+
+<br>
+
+#### 2. WebSocket 인증 및 사용자 식별
+WebSocket 연결 시점에 JWT 기반 인증을 수행하여
+이후 메시지 처리 과정에서는 인증 정보를 재검증하지 않도록 구성했습니다.
+
+##### 2-1. HandShakeInterceptor
+```java
+@Override
+public boolean beforeHandshake(
+        ServerHttpRequest request,
+        ServerHttpResponse response,
+        WebSocketHandler wsHandler,
+        Map<String, Object> attributes) {
+
+    // 토큰 검증
+    ...
+
+    attributes.put("accessToken", accessToken);
+    return true;
+}
+```
+- JWT 검증
+- 인증 토큰을 WebSocket 세션 속성에 저장
+
+##### 2-2. ChannelInterceptor
+```java
+@Override
+public Message<?> preSend(Message<?> message, MessageChannel channel) {
+
+    StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+
+    if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+
+        // 사용자 정보 추출
+        ...
+
+        // 인증 객체 생성 후 Principal 등록
+        accessor.setUser(authentication);
+
+        log.info("[Authentication Principal 등록 완료] userId={}", userId);
+    }
+
+    return message;
+}
+```
+- 세션에 저장된 토큰을 기반으로 사용자 정보 추출
+- WebSocket 세션의 Principal로 등록
+
+<br>
+
+#### 3. Redis Pub/Sub 기반 메시지 브로드캐스트
+
+채팅 메시지는 Redis Pub/Sub을 통해 서버 간에 브로드캐스트 됩니다.
+각 서버 인스턴스는 Redis Channel을 구독하고 있으며, 
+수신한 메시지를 해당 서버에 연결된 사용자에게 전달합니다.  
+
+<br>
+
+#### 4. 트랜잭션 정합성 보장
+채팅 메시지는 데이터베이스 저장이 완료된 이후에만
+Redis로 Publish되도록 구성했습니다.  
+
+이를 통해 메시지 저장 실패 시  
+실시간 메시지가 전파되는 문제를 방지하고,   
+DB 상태와 실시간 메시지 전달 간의 정합성을 유지했습니다.
 
 ```
-1. 사용자가 채팅 메시지를 전송하면  
-   → WebSocket을 통해 현재 연결된 서버로 전달됩니다.
-2. 서버는 해당 메시지를 Redis Channel로 Publish 합니다.
-3. Redis는 메시지를 해당 채널을 구독 중인 모든 서버 인스턴스에 브로드캐스트합니다.
-4. 각 서버는 Redis로부터 전달받은 메시지를  
-   → 자신에게 연결된 클라이언트들에게 WebSocket으로 다시 전송합니다.
+@Transactional
+public void saveMessage(Long chatRoomId, SendChatMessageDto body, Long memberId) {
 
-이를 통해 **어느 서버에 연결되어 있든 동일한 채팅 메시지를 실시간으로 수신**할 수 있습니다.
+    // DB 저장 및 채팅방 상태 업데이트
+    ...
 
----
+    // 트랜잭션 커밋 이후 Redis Publish 및 알림 처리
+    executeAfterCommit(() ->
+        publishMessageAndNotification(chatRoomId, memberId, prepareInfo.otherMemberId(), chatMessage)
+    );
+}
 
-### 설계 시 고려한 점
-채팅 메시지는 Redis Pub/Sub을 통해 전달되기 전에
-이미 데이터베이스에 저장되는 구조입니다.
+private void executeAfterCommit(Runnable action) {
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        }
+    );
+}
+```
+<br>
 
-따라서 Redis는 메시지 영속성을 담당하지 않으며, 
-실시간 전달 및 서버 간 동기화 역할에 집중하도록 설계했습니다.  
+#### 5. 장애 상황 대응
+Redis Publish 과정에서 예외가 발생할 경우, 
+현재 서버에 연결된 사용자에게는 
+WebSocket을 통한 직접 전달 방식으로 메시지를 전송하는 fallback 구조를 적용했습니다.  
 
-또한 Redis Publish 과정에서 예외가 발생할 경우를 대비해,
-WebSocket을 통해 현재 서버에 연결된 클라이언트에게
-직접 메시지를 전달하는 fallback 로직을 추가했습니다.
+이를 통해 Redis 장애 상황에서도  
+채팅 기능이 완전히 중단되지 않도록 설계했습니다.
 
-```java
+```
 public void publish(Long chatRoomId, ChatMessageDto dto) {
     try {
         // 정상 동작 시 Redis Publish 동작
@@ -481,8 +571,6 @@ public void publish(Long chatRoomId, ChatMessageDto dto) {
     }
 }
 ```
-이를 통해 일부 인프라 장애 상황에서도 
-채팅 기능이 완전히 중단되지 않도록 구성했습니다.
 
 </details>
 
@@ -525,30 +613,15 @@ Job은 실행 트리거 역할만 담당하고,
 #### 1. 스케줄 구성 및 등록 방식
 
 ##### 1-1. JobDetail / Trigger를 Spring Bean으로 정의
-```java
-@Bean
-public JobDetail postEmbeddingJobDetail() {
-  return JobBuilder.newJob(PostEmbeddingJob.class)
-    .withIdentity("PostEmbeddingJob", "post")
-    .withDescription("게시글 임베딩 작업")
-    .storeDurably()
-    .build();
-}
+Job 이름과 그룹을 명시하여 각 스케줄링 작업을 구분하고 관리할 수 있도록 하고, 이를 Spring Bean으로 등록했습니다.  
+Bean으로 등록함으로써 Spring Context에서 Job과 Trigger를 관리할 수 있으며,  
+의존성 주입과 라이프사이클 관리가 가능해집니다.  
 
-@Bean
-public Trigger postEmbeddingTrigger(JobDetail postEmbeddingJobDetail) {
-  return TriggerBuilder.newTrigger()
-    .forJob(postEmbeddingJobDetail)
-    .withIdentity("PostEmbeddingTrigger", "post")
-    .withSchedule(
-      CronScheduleBuilder.cronSchedule("0 0 * * * ?")
-    )
-    .build();
-}
-```
-- Job 이름과 그룹을 명시하여 스케줄 관리 식별성 확보
-- `storeDurable()`를 통해 Trigger와 분리된 상태로 Job을 유지
-- 스케줄 변경 시 비즈니스 로직 수정 없이 Trigger 설정만 변경 가능
+또한 `storeDurable()` 옵션을 사용해 Job을 Trigger와 분리된 상태로 유지하여, 
+특정 Trigger가 삭제되거나 변경되더라고 Job 자체는 그대로 유지되도록 구성했습니다.  
+
+덕분에 스케줄링 주기나 조건을 바꾸더라도 비즈니스 로직을 수정할 필요 없이 Trigger 설정만 변경하면 되므로  
+유지보수와 확장성이 크게 향상됩니다.
 
 ##### 1-2. 애플리케이션 시작 시 스케줄 등록 및 갱신 처리
 ```java
@@ -580,7 +653,7 @@ public CommandLineRunner registerReservationJobs(
 
 #### 2. 배치 실행 흐름 추적
 
-Quartz의 `JobListner`와 `TriggerListener`를 활용하여  
+Quartz의 `JobListener`와 `TriggerListener`를 활용하여  
 배치 작업의 실행 흐름을 로그로 기록했습니다.
 - Job 실행 시작 / 성공 / 실패 로그
 - Trigger 실행 및 Misfire 발생 시 로그
