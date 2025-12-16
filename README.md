@@ -81,6 +81,11 @@
 - **분산 인증 토큰 관리** -
  Redis를 Refresh Token 저장소로 활용해 서버 간 인증 상태를 공유하고, **수평 확장 및 무중단 배포 환경 지원**
 
+
+### DataBase 설계
+<img width="1485" height="739" alt="image" src="https://github.com/user-attachments/assets/0f8892fc-cbab-4de3-95fd-acb3c62dda34" />
+
+
 <br>
 
 # 🚀 기능 소개
