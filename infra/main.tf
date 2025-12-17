@@ -296,6 +296,11 @@ docker run -d \
   --web.enable-remote-write-receiver \
   --enable-feature=native-histograms
 
+# Grafana 볼륨 디렉토리 생성 및 권한 설정
+mkdir -p /dockerProjects/grafana_1/volumes/var/lib/grafana
+chown -R 472:472 /dockerProjects/grafana_1/volumes/var/lib/grafana
+chmod -R u+rwX,g+rwX /dockerProjects/grafana_1/volumes/var/lib/grafana
+
 # Grafana 설치
 docker run -d \
   --name grafana_1 \
